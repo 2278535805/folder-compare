@@ -116,20 +116,8 @@ fn main() -> Result<()> {
     println!("{}", format!("共找到 {} 个重复文件", b_duplicates.len()).cyan());
     println!("{}", format!("共找到 {} 个 B 中独有文件", b_unique.len()).cyan());
 
-    let mut delete_same = false;
-    let mut output_same = false;
-    let mut output_unique = false;
-
-    if let Some(input) = input {
-        if "y".contains(input) {
-            delete_same = true;
-        }
-        if "o".contains(input) {
-            output_same = true;
-        }
-        if "u".contains(input) {
-            output_unique = true;
-        }
+    let input = if let Some(input) = input {
+        input.clone()
     } else {
         println!("{}", format!(
             "比较完成，请选择操作 ({})\n  [y] 删除 B 文件夹中重复文件\n  [o] 输出重复文件列表到 BSame_files.txt\n  [u] 输出 B 独有文件列表到 BUnique_files.txt: ",
@@ -138,18 +126,10 @@ fn main() -> Result<()> {
         let mut user_input = String::new();
         std::io::stdin().read_line(&mut user_input)?;
         let user_input = user_input.trim().to_lowercase();
-        if user_input.contains('y') {
-            delete_same = true;
-        }
-        if user_input.contains('o') {
-            output_same = true;
-        }
-        if user_input.contains('u') {
-            output_unique = true;
-        }
-    }
+        user_input
+    };
 
-    if delete_same {
+    if input.contains("y") {
         for file in &b_duplicates {
             if fs::remove_file(&file).is_ok() {
                 println!("{}", format!("已删除 {}", file.display()).green());
@@ -158,8 +138,8 @@ fn main() -> Result<()> {
             }
         }
         println!("{}", "删除任务完成".green());
-    };
-    if output_same {
+    }
+    if input.contains("o") {
         let mut output_file = File::create("BSame_files.txt")
             .with_context(|| format!("无法创建 BSame_files.txt"))?;
         
@@ -167,10 +147,9 @@ fn main() -> Result<()> {
             writeln!(output_file, "{}", file.display())
                 .with_context(|| format!("无法写入: {}", file.display()))?;
         }
-        
         println!("{}", format!("重复文件列表已输出到 BSame_files.txt").green());
-    };
-    if output_unique {
+    }
+    if input.contains("u") {
         let mut output_file = File::create("BUnique_files.txt")
             .with_context(|| format!("无法创建 BUnique_files.txt"))?;
         
@@ -178,8 +157,7 @@ fn main() -> Result<()> {
             writeln!(output_file, "{}", file.display())
                 .with_context(|| format!("无法写入: {}", file.display()))?;
         }
-        
         println!("{}", format!("B 中独有文件列表已输出到 BUnique_files.txt").green());
-    };
+    }
     Ok(())
 }
