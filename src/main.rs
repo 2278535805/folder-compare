@@ -115,11 +115,6 @@ fn main() -> Result<()> {
     let (b_duplicates, b_unique) = compare_folders(dir_a, dir_b)?;
     println!("{}", format!("共找到 {} 个重复文件", b_duplicates.len()).cyan());
     println!("{}", format!("共找到 {} 个 B 中独有文件", b_unique.len()).cyan());
-    
-    println!("{}", format!(
-        "比较完成，请选择操作 ({})\n  [y] 删除 B 文件夹中重复文件\n  [o] 输出重复文件列表到 BSame_files.txt\n  [u] 输出 B 独有文件列表到 BUnique_files.txt: ",
-        dir_b.display()).yellow()
-    );
 
     let mut delete_same = false;
     let mut output_same = false;
@@ -136,6 +131,10 @@ fn main() -> Result<()> {
             output_unique = true;
         }
     } else {
+        println!("{}", format!(
+            "比较完成，请选择操作 ({})\n  [y] 删除 B 文件夹中重复文件\n  [o] 输出重复文件列表到 BSame_files.txt\n  [u] 输出 B 独有文件列表到 BUnique_files.txt: ",
+            dir_b.display()).yellow()
+        );
         let mut user_input = String::new();
         std::io::stdin().read_line(&mut user_input)?;
         let user_input = user_input.trim().to_lowercase();
