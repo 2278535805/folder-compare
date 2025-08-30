@@ -83,7 +83,6 @@ fn compare_folders(dir_a: &Path, dir_b: &Path) -> Result<(Vec<PathBuf>, Vec<Path
             for p in a_paths {
                 println!("  {}", p.display());
             }
-            println!();
         }
     }
 
@@ -95,7 +94,6 @@ fn compare_folders(dir_a: &Path, dir_b: &Path) -> Result<(Vec<PathBuf>, Vec<Path
                 println!("  {}", p.display());
                 b_unique.push(p.clone());
             }
-            println!();
         }
     }
     
@@ -104,67 +102,85 @@ fn compare_folders(dir_a: &Path, dir_b: &Path) -> Result<(Vec<PathBuf>, Vec<Path
 
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
-    if args.len() != 3 {
-        eprintln!(
-            "{}",
-            "用法: chart_compare <源目录> <目标目录>".red()
+    if args.len() < 3 {
+        eprintln!("{}",
+            "用法: chart_compare <源目录> <目标目录> [操作]\n可选操作:\n  [y] 删除重复\n  [o] 输出重复\n  [u] 输出独有".red()
         );
         exit(1);
     }
     let dir_a = Path::new(&args[1]);
     let dir_b = Path::new(&args[2]);
+    let input = args.get(3);
 
     let (b_duplicates, b_unique) = compare_folders(dir_a, dir_b)?;
     println!("{}", format!("共找到 {} 个重复文件", b_duplicates.len()).cyan());
     println!("{}", format!("共找到 {} 个 B 中独有文件", b_unique.len()).cyan());
     
     println!("{}", format!(
-        "比较完成，请选择操作 ({}):
-        [y] 删除 B 文件夹中重复文件
-        [o] 输出重复文件列表到 BSame_files.txt
-        [u] 输出 B 独有文件列表到 BUnique_files.txt: ",
+        "比较完成，请选择操作 ({})\n  [y] 删除 B 文件夹中重复文件\n  [o] 输出重复文件列表到 BSame_files.txt\n  [u] 输出 B 独有文件列表到 BUnique_files.txt: ",
         dir_b.display()).yellow()
     );
 
-    let mut input = String::new();
-    std::io::stdin().read_line(&mut input)?;
-    match input.trim().to_ascii_lowercase().as_str() {
-        "y" => {
-            for file in &b_duplicates {
-                if fs::remove_file(&file).is_ok() {
-                    println!("{}", format!("已删除 {}", file.display()).green());
-                } else {
-                    println!("{}", format!("删除失败 {}", file.display()).red());
-                }
-            }
-            println!("{}", "删除任务完成".green());
+    let mut delete_same = false;
+    let mut output_same = false;
+    let mut output_unique = false;
+
+    if let Some(input) = input {
+        if "y".contains(input) {
+            delete_same = true;
         }
-        "o" => {
-            let mut output_file = File::create("BSame_files.txt")
-                .with_context(|| format!("无法创建 BSame_files.txt"))?;
-            
-            for file in &b_duplicates {
-                writeln!(output_file, "{}", file.display())
-                    .with_context(|| format!("无法写入: {}", file.display()))?;
-            }
-            
-            println!("{}", format!("重复文件列表已输出到 BSame_files.txt").green());
+        if "o".contains(input) {
+            output_same = true;
         }
-        "u" => {
-            let mut output_file = File::create("BUnique_files.txt")
-                .with_context(|| format!("无法创建 BUnique_files.txt"))?;
-            
-            for file in &b_unique {
-                writeln!(output_file, "{}", file.display())
-                    .with_context(|| format!("无法写入: {}", file.display()))?;
-            }
-            
-            println!("{}", format!("B中独有文件列表已输出到 BUnique_files.txt").green());
+        if "u".contains(input) {
+            output_unique = true;
         }
-        _ => {
-            exit(0);
+    } else {
+        let mut user_input = String::new();
+        std::io::stdin().read_line(&mut user_input)?;
+        let user_input = user_input.trim().to_lowercase();
+        if user_input.contains('y') {
+            delete_same = true;
+        }
+        if user_input.contains('o') {
+            output_same = true;
+        }
+        if user_input.contains('u') {
+            output_unique = true;
         }
     }
-    
+
+    if delete_same {
+        for file in &b_duplicates {
+            if fs::remove_file(&file).is_ok() {
+                println!("{}", format!("已删除 {}", file.display()).green());
+            } else {
+                println!("{}", format!("删除失败 {}", file.display()).red());
+            }
+        }
+        println!("{}", "删除任务完成".green());
+    };
+    if output_same {
+        let mut output_file = File::create("BSame_files.txt")
+            .with_context(|| format!("无法创建 BSame_files.txt"))?;
+        
+        for file in &b_duplicates {
+            writeln!(output_file, "{}", file.display())
+                .with_context(|| format!("无法写入: {}", file.display()))?;
+        }
+        
+        println!("{}", format!("重复文件列表已输出到 BSame_files.txt").green());
+    };
+    if output_unique {
+        let mut output_file = File::create("BUnique_files.txt")
+            .with_context(|| format!("无法创建 BUnique_files.txt"))?;
+        
+        for file in &b_unique {
+            writeln!(output_file, "{}", file.display())
+                .with_context(|| format!("无法写入: {}", file.display()))?;
+        }
+        
+        println!("{}", format!("B 中独有文件列表已输出到 BUnique_files.txt").green());
+    };
     Ok(())
 }
