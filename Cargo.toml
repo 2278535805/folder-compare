@@ -1,0 +1,12 @@
+[package]
+name = "folder-compare"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.99"
+colored = "3.0.0"
+indicatif = "0.18.0"
+md5 = "0.8.0"
+rayon = "1.11.0"
+walkdir = "2.5.0"
